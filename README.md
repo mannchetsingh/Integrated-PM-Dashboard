@@ -83,25 +83,26 @@ Generate one:
 npx auth secret
 ```
 
-#### `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` — **required for Google sign-in**
+#### `AUTH_PASSWORD` — **required in production**
 
-[Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
-→ Create OAuth client ID → Web application. Authorised redirect URIs:
+Sign-in is email + password. There's no OAuth and no user table: your email is
+hashed into a stable owner id, and `AUTH_PASSWORD` is the single shared password
+that guards the door.
 
 ```
-http://localhost:3000/api/auth/callback/google
-https://<your-app>.vercel.app/api/auth/callback/google
+AUTH_PASSWORD="something-long-and-unguessable"
 ```
 
-#### `ALLOW_DEV_LOGIN` — optional, local only
+Leave it empty **locally** and the password field disappears — any email signs
+straight in, which is convenient on your own machine.
 
-Set to `"true"` for an email-only sign-in form on the login page, so you can use
-the hub before setting up Google OAuth. There's no password — the email just
-becomes your owner id.
+**In production it is mandatory and fails closed:** with `NODE_ENV=production`
+and no `AUTH_PASSWORD`, every sign-in is refused and the login page says so. That
+is deliberate — a passwordless hub on a public URL would let anyone who guesses
+your email read your meeting minutes.
 
-It requires **both** `ALLOW_DEV_LOGIN="true"` **and** `NODE_ENV !== "production"`.
-`NODE_ENV` is always `production` on Vercel, so this cannot activate on a deployment
-even if the variable is set there. Turn it off locally once Google OAuth works.
+Different emails get entirely separate hubs; they share only the password. To
+restrict which addresses may sign in at all, add `ALLOWED_EMAILS`.
 
 #### `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` — at least one
 
@@ -111,9 +112,9 @@ providers that have one configured. `DEFAULT_LLM_PROVIDER` picks the default
 
 #### `ALLOWED_EMAILS` — optional
 
-Comma-separated allowlist. Accepts full addresses (`me@gmail.com`) or domains
-(`@company.com`). Leave empty to let any Google account in — **set it if the app is
-on a public URL.**
+Comma-separated allowlist applied on top of the password. Accepts full addresses
+(`me@gmail.com`) or domains (`@company.com`). Empty means any email that knows
+the password gets in — **set it if the app is on a public URL.**
 
 ### 3. Run
 
@@ -139,10 +140,18 @@ npm run dev
 1. Push the repo to GitHub.
 2. **Vercel → Add New → Project**, import it. The defaults are correct; no build
    configuration needed.
-3. Add every variable from `.env.local` under **Settings → Environment Variables**
-   (Production, Preview and Development).
-4. Deploy, then add the real `https://<your-app>.vercel.app/api/auth/callback/google`
-   redirect URI to the Google OAuth client.
+3. Add these under **Settings → Environment Variables** (Production, Preview and
+   Development):
+
+   | Variable | Notes |
+   |---|---|
+   | `MONGODB_URI` | Atlas, with real credentials. The local dev database does not exist here. |
+   | `AUTH_SECRET` | `npx auth secret` |
+   | `AUTH_PASSWORD` | **Mandatory** — without it the deployment blocks all sign-in |
+   | `ANTHROPIC_API_KEY` | Or `OPENAI_API_KEY`, for the AI features |
+   | `ALLOWED_EMAILS` | Recommended on a public URL |
+
+4. Deploy.
 
 `AUTH_URL` is auto-detected; only set it if sign-in redirects somewhere wrong.
 
@@ -179,8 +188,10 @@ src/
 
 - **Ownership is enforced in the query**, never from the request body — every handler
   starts with `currentUserId()` and filters on `ownerId`.
-- **Auth is guarded in a layout, not middleware.** The MongoDB adapter can't run on
-  the edge runtime, so `src/app/(app)/layout.tsx` does the redirect.
+- **Auth is guarded in a layout, not middleware**, in `src/app/(app)/layout.tsx`.
+- **No user table.** Sign-in is email + password with JWT sessions, so an owner id is
+  just `sha256(email)` truncated. Nothing about an account needs persisting, which is
+  why there's no auth database adapter.
 - **Connections are cached on `globalThis`** so warm lambdas reuse them instead of
   exhausting the Atlas pool.
 - **Adding a model** is a one-line edit to `src/lib/llm/models.ts`.

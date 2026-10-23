@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { CheckSquare, FileText, Mic, Sparkles } from "lucide-react";
-import { auth, devLoginEnabled, signIn } from "@/lib/auth";
+import { auth, passwordRequired, signIn, signInDisabled } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -10,29 +10,6 @@ const HIGHLIGHTS = [
   { icon: Mic, text: "Turn rough pointers into finished meeting minutes" },
   { icon: FileText, text: "Draft and refine documents with an assistant that knows your work" },
 ];
-
-function GoogleMark() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.63h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.8Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.96-1.08 7.94-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.11A12 12 0 0 0 12 24Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.26a12 12 0 0 0 0 10.76l4.01-3.11Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.18 15.23 0 12 0A12 12 0 0 0 1.26 6.62l4.01 3.11C6.22 6.87 8.87 4.75 12 4.75Z"
-      />
-    </svg>
-  );
-}
 
 export default async function LoginPage({
   searchParams,
@@ -86,71 +63,89 @@ export default async function LoginPage({
 
           <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
           <p className="mt-1.5 text-sm text-ink-faint">
-            Use your Google account to open your hub.
+            Your email decides whose hub you open.
           </p>
 
-          {error && (
-            <p className="mt-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-              {error === "AccessDenied"
-                ? "That account isn't on the allowlist for this hub."
-                : "Sign-in failed. Please try again."}
-            </p>
-          )}
-
-          <form
-            className="mt-6"
-            action={async () => {
-              "use server";
-              await signIn("google", { redirectTo: "/" });
-            }}
-          >
-            <button
-              type="submit"
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-line bg-surface-2 text-sm font-medium transition-colors hover:bg-surface-3"
-            >
-              <GoogleMark />
-              Continue with Google
-            </button>
-          </form>
-
-          {devLoginEnabled && (
-            <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3.5">
-              <p className="text-xs font-medium text-amber-200">Local development sign-in</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-faint">
-                No password — for use before Google OAuth is set up. Disabled automatically in
-                production.
+          {signInDisabled ? (
+            <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-3 text-sm text-amber-200">
+              <p className="font-medium">Sign-in is disabled</p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
+                No <code className="font-mono">AUTH_PASSWORD</code> is set, so this deployment
+                refuses to let anyone in. Set it in the environment and redeploy.
               </p>
+            </div>
+          ) : (
+            <>
+              {error && (
+                <p className="mt-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                  {error === "CredentialsSignin"
+                    ? "That email or password wasn't accepted."
+                    : "Sign-in failed. Please try again."}
+                </p>
+              )}
 
               <form
-                className="mt-3 flex gap-2"
+                className="mt-6 space-y-3"
                 action={async (formData: FormData) => {
                   "use server";
-                  await signIn("dev", {
+                  await signIn("credentials", {
                     email: String(formData.get("email") ?? ""),
+                    password: String(formData.get("password") ?? ""),
                     redirectTo: "/",
                   });
                 }}
               >
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  className="h-9 flex-1 rounded-lg border border-line bg-surface-2 px-3 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
-                />
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-medium tracking-wide text-ink-dim uppercase">
+                    Email
+                  </span>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="username"
+                    placeholder="you@example.com"
+                    className="h-10 w-full rounded-lg border border-line bg-surface-2 px-3 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+                  />
+                </label>
+
+                {passwordRequired && (
+                  <label className="block space-y-1.5">
+                    <span className="text-xs font-medium tracking-wide text-ink-dim uppercase">
+                      Password
+                    </span>
+                    <input
+                      name="password"
+                      type="password"
+                      required
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      className="h-10 w-full rounded-lg border border-line bg-surface-2 px-3 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
+                    />
+                  </label>
+                )}
+
                 <button
                   type="submit"
-                  className="h-9 shrink-0 rounded-lg border border-line bg-surface-3 px-3 text-sm font-medium transition-colors hover:bg-surface-2"
+                  className="h-10 w-full rounded-lg border border-accent-dim/60 bg-accent text-sm font-medium text-white shadow-sm shadow-accent/20 transition-colors hover:bg-accent-dim"
                 >
                   Sign in
                 </button>
               </form>
-            </div>
+
+              {!passwordRequired && (
+                <p className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs leading-relaxed text-amber-200/80">
+                  No password is set, so any email can sign in. Fine on your own machine — set{" "}
+                  <code className="font-mono">AUTH_PASSWORD</code> before putting this on a
+                  public URL.
+                </p>
+              )}
+            </>
           )}
 
           <p className="mt-6 text-xs leading-relaxed text-ink-faint">
-            By signing in you agree that this hub stores your projects, notes and chat history in
-            the database you configured.
+            This hub stores your projects, notes and chat history in the database you
+            configured.
           </p>
         </div>
       </div>

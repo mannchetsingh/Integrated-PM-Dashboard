@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -35,7 +34,7 @@ function isActive(pathname: string, href: string) {
 export function Sidebar({
   user,
 }: {
-  user: { name?: string | null; email?: string | null; image?: string | null };
+  user: { name?: string | null; email?: string | null };
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -69,19 +68,10 @@ export function Sidebar({
   const footer = (
     <div className="border-t border-line p-3">
       <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-        {user.image ? (
-          <Image
-            src={user.image}
-            alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-full ring-1 ring-line"
-          />
-        ) : (
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-semibold text-accent-soft">
-            {initials(user.name ?? user.email)}
-          </div>
-        )}
+        {/* Email sign-in carries no avatar, so initials are the only identity mark. */}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-semibold text-accent-soft">
+          {initials(user.name ?? user.email)}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-ink">{user.name ?? "Signed in"}</p>
           <p className="truncate text-xs text-ink-faint">{user.email}</p>

@@ -44,8 +44,8 @@ if (!uri || /<db_username>|<db_password>/.test(uri)) {
   process.exit(1);
 }
 
-const devUserId = (value) =>
-  createHash("sha256").update(value).digest("hex").slice(0, 24);
+const ownerIdForEmail = (value) =>
+  createHash("sha256").update(value.trim().toLowerCase()).digest("hex").slice(0, 24);
 
 /** Mirrors the index declarations in src/models/*.ts. */
 const INDEXES = {
@@ -93,13 +93,10 @@ try {
   }
 
   /* ---------- owner ---------- */
-  const account = await db.collection("users").findOne({ email });
-  const ownerId = account ? String(account._id) : devUserId(email);
-
-  console.log(
-    `\n→ Owner: ${email} → ${ownerId}` +
-      (account ? "  (existing Google account)" : "  (dev-login id)"),
-  );
+  // Must match userIdForEmail() in src/lib/auth.ts — there's no users table,
+  // an owner is just the hash of their email.
+  const ownerId = ownerIdForEmail(email);
+  console.log(`\n→ Owner: ${email} → ${ownerId}`);
 
   const existing = await db
     .collection("projects")

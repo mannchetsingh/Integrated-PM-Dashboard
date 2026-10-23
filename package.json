@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.1.0",
-    "@auth/mongodb-adapter": "^3.11.3",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.61.0",
     "mongodb": "^6.21.0",

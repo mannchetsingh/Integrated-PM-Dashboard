@@ -39,12 +39,7 @@ console.log(`  Data persists in ${dbPath}\n`);
 const child = spawn("npx", ["next", "dev"], {
   stdio: "inherit",
   shell: true,
-  env: {
-    ...process.env,
-    MONGODB_URI: uri,
-    // Without a Google OAuth client, this is the only way in.
-    ALLOW_DEV_LOGIN: "true",
-  },
+  env: { ...process.env, MONGODB_URI: uri },
 });
 
 let shuttingDown = false;
