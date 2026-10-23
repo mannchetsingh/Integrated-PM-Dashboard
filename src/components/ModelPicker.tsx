@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Cpu } from "lucide-react";
-import type { HubConfig, Provider } from "@/lib/types";
+import { PROVIDER_LABEL, type HubConfig, type Provider } from "@/lib/types";
 import { cx } from "@/lib/format";
 
 export interface ModelChoice {
@@ -43,7 +43,7 @@ export function ModelPicker({
   if (config.providers.length === 0) {
     return (
       <span className="text-xs text-amber-300/80">
-        No API key configured — add ANTHROPIC_API_KEY or OPENAI_API_KEY.
+        No API key configured — add ANTHROPIC_API_KEY, OPENAI_API_KEY or GOOGLE_API_KEY.
       </span>
     );
   }
@@ -71,7 +71,7 @@ export function ModelPicker({
         >
           {config.providers.map((entry) => (
             <option key={entry} value={entry}>
-              {entry === "anthropic" ? "Claude" : "OpenAI"}
+              {PROVIDER_LABEL[entry]}
             </option>
           ))}
         </select>

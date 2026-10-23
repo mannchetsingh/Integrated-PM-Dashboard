@@ -106,7 +106,13 @@ export interface Thread {
 /** Thread list responses omit `messages` — the route projects them away. */
 export type ThreadSummary = Omit<Thread, "messages" | "createdAt">;
 
-export type Provider = "anthropic" | "openai";
+export type Provider = "anthropic" | "openai" | "google";
+
+export const PROVIDER_LABEL: Record<Provider, string> = {
+  anthropic: "Claude",
+  openai: "OpenAI",
+  google: "Gemini",
+};
 
 export interface ModelOption {
   id: string;
