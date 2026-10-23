@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Tailwind v4 turns each of these into utilities automatically,
+   so --color-surface gives you bg-surface / text-surface / border-surface.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-bg: #090c13;
+  --color-surface: #11161f;
+  --color-surface-2: #171d29;
+  --color-surface-3: #1e2635;
+  --color-line: #232c3d;
+  --color-line-soft: #1a212e;
+
+  --color-ink: #e8edf7;
+  --color-ink-dim: #9aa6bd;
+  --color-ink-faint: #6b7791;
+
+  --color-accent: #6366f1;
+  --color-accent-soft: #818cf8;
+  --color-accent-dim: #4f46e5;
+
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+  --color-info: #38bdf8;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --radius-xl: 0.875rem;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars that don't fight the dark theme. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-3);
+  background-clip: content-box;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-soft);
+  outline-offset: 2px;
+}
+
+/* Inputs inherit the dark surface rather than the UA's white box. */
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Date inputs keep a light-mode calendar glyph without this. */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+@keyframes ph-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-in {
+  animation: ph-fade-in 0.18s ease-out;
+}
+
+/* The blinking caret shown at the tail of a streaming model response. */
+@keyframes ph-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+.stream-caret::after {
+  content: "▍";
+  margin-left: 1px;
+  animation: ph-blink 1s steps(1) infinite;
+  color: var(--color-accent-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Markdown. @tailwindcss/typography isn't a dependency, so prose is hand-rolled
+   — it only needs to cover what the models actually emit.
+--------------------------------------------------------------------------- */
+.prose {
+  color: var(--color-ink);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose > :last-child {
+  margin-bottom: 0;
+}
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.6em 0 0.6em;
+  color: #fff;
+}
+.prose h1 {
+  font-size: 1.5em;
+}
+.prose h2 {
+  font-size: 1.25em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--color-line-soft);
+}
+.prose h3 {
+  font-size: 1.08em;
+}
+.prose h4 {
+  font-size: 1em;
+  color: var(--color-ink-dim);
+}
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose table,
+.prose pre {
+  margin: 0.85em 0;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+}
+.prose ul {
+  list-style: disc;
+}
+.prose ol {
+  list-style: decimal;
+}
+.prose li {
+  margin: 0.3em 0;
+}
+.prose li::marker {
+  color: var(--color-ink-faint);
+}
+.prose a {
+  color: var(--color-accent-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose strong {
+  color: #fff;
+  font-weight: 600;
+}
+.prose blockquote {
+  border-left: 3px solid var(--color-accent-dim);
+  padding-left: 1em;
+  color: var(--color-ink-dim);
+  font-style: italic;
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-surface-3);
+  padding: 0.15em 0.4em;
+  border-radius: 5px;
+  border: 1px solid var(--color-line-soft);
+}
+.prose pre {
+  background: #0b0f17;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+}
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85em;
+}
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--color-line);
+  margin: 1.8em 0;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925em;
+  display: block;
+  overflow-x: auto;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--color-line);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose th {
+  background: var(--color-surface-2);
+  font-weight: 600;
+}
+.prose input[type="checkbox"] {
+  margin-right: 0.5em;
+  accent-color: var(--color-accent);
+}
+.prose img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+/* Compact variant for chat bubbles and card previews. */
+.prose-sm {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.prose-sm h1 {
+  font-size: 1.3em;
+}
+.prose-sm h2 {
+  font-size: 1.15em;
+}
+.prose-sm p,
+.prose-sm ul,
+.prose-sm ol,
+.prose-sm pre {
+  margin: 0.6em 0;
+}
