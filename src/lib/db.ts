@@ -1,11 +1,5 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error("MONGODB_URI is not set. Copy .env.example to .env.local and fill it in.");
-}
-
 /**
  * Serverless functions get torn down and re-created constantly, so a fresh
  * connection per invocation would exhaust the Atlas connection pool. Cache the
@@ -29,8 +23,21 @@ globalWithMongoose._mongoose = cached;
 export async function connectDB() {
   if (cached.conn) return cached.conn;
 
+  // Read the URI here rather than at module scope, and throw here rather than
+  // on import. Next imports every route module while collecting page data at
+  // build time, so a module-scope throw fails the build on any machine without
+  // runtime secrets — including CI and Vercel's builder. A request that
+  // actually needs the database is the right place to complain.
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error(
+      "MONGODB_URI is not set. Locally: copy .env.example to .env.local and fill it in. " +
+        "On Vercel: add it under Settings → Environment Variables, then redeploy.",
+    );
+  }
+
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI!, {
+    cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
       maxPoolSize: 10,
     });
