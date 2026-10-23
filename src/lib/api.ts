@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "./auth";
 
 /**
- * Returns the signed-in user's id, or null. Every route handler should start
- * with this — ownership is enforced by filtering on ownerId in the query, not
- * by trusting an id from the request body.
+ * This hub has no authentication — every visitor is the same person.
+ *
+ * Records still carry an ownerId so the queries, indexes and models didn't have
+ * to change, and so sign-in can be reintroduced later without a data migration.
+ * It's just a constant now rather than a signed-in user's id.
  */
+export const HUB_OWNER_ID = "hub";
+
 export async function currentUserId(): Promise<string | null> {
-  const session = await auth();
-  return session?.user?.id ?? null;
+  return HUB_OWNER_ID;
 }
 
 export const unauthorized = () =>

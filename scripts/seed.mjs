@@ -2,14 +2,12 @@
  * Creates the indexes the models declare, and optionally a sample project so
  * there is something to look at on first run.
  *
- *   npm run db:seed -- --email=you@example.com
- *   npm run db:seed -- --email=you@example.com --indexes-only
+ *   npm run db:seed
+ *   npm run db:seed -- --indexes-only
  *
- * Ownership: every document carries an ownerId. If the address already signed in
- * through Google, that account's id is used; otherwise the id the dev login
- * derives from the email, so the two paths agree.
+ * The hub has no accounts, so everything is owned by the single constant id in
+ * src/lib/api.ts.
  */
-import { createHash } from "node:crypto";
 import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 
 // A URI already in the environment wins over .env.local, so this can be pointed
@@ -27,25 +25,16 @@ const arg = (name) =>
   process.argv.find((entry) => entry.startsWith(`--${name}=`))?.split("=").slice(1).join("=");
 const flag = (name) => process.argv.includes(`--${name}`);
 
-const email = arg("email")?.trim().toLowerCase();
 const indexesOnly = flag("indexes-only");
 
-if (!email && !indexesOnly) {
-  console.error(
-    "Usage: npm run db:seed -- --email=you@example.com\n" +
-      "       npm run db:seed -- --indexes-only",
-  );
-  process.exit(1);
-}
+/** Must match HUB_OWNER_ID in src/lib/api.ts. */
+const OWNER_ID = "hub";
 
 const uri = process.env.MONGODB_URI;
 if (!uri || /<db_username>|<db_password>/.test(uri)) {
   console.error("✗ MONGODB_URI is missing or still has placeholders. Run: npm run db:check");
   process.exit(1);
 }
-
-const ownerIdForEmail = (value) =>
-  createHash("sha256").update(value.trim().toLowerCase()).digest("hex").slice(0, 24);
 
 /** Mirrors the index declarations in src/models/*.ts. */
 const INDEXES = {
@@ -93,10 +82,7 @@ try {
   }
 
   /* ---------- owner ---------- */
-  // Must match userIdForEmail() in src/lib/auth.ts — there's no users table,
-  // an owner is just the hash of their email.
-  const ownerId = ownerIdForEmail(email);
-  console.log(`\n→ Owner: ${email} → ${ownerId}`);
+  const ownerId = OWNER_ID;
 
   const existing = await db
     .collection("projects")
@@ -232,7 +218,7 @@ try {
 
   console.log(
     `\n✓ Seeded: 1 project, ${tasks.length} tasks, 1 meeting, 1 document.` +
-      `\n  Sign in as ${email} to see it.`,
+      `\n  Open the hub to see it.`,
   );
 } catch (error) {
   console.error(`\n✗ ${error?.message ?? error}`);

@@ -2,21 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import {
   CheckSquare,
   FileText,
   FolderKanban,
   LayoutDashboard,
-  LogOut,
   Menu,
   MessageSquare,
   Mic,
   Sparkles,
   X,
 } from "lucide-react";
-import { cx, initials } from "@/lib/format";
+import { cx } from "@/lib/format";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -31,11 +29,7 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function Sidebar({
-  user,
-}: {
-  user: { name?: string | null; email?: string | null };
-}) {
+export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -65,26 +59,12 @@ export function Sidebar({
     </nav>
   );
 
+  // No accounts, so nothing to show about who's signed in.
   const footer = (
-    <div className="border-t border-line p-3">
-      <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-        {/* Email sign-in carries no avatar, so initials are the only identity mark. */}
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-semibold text-accent-soft">
-          {initials(user.name ?? user.email)}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-ink">{user.name ?? "Signed in"}</p>
-          <p className="truncate text-xs text-ink-faint">{user.email}</p>
-        </div>
-        <button
-          onClick={() => signOut({ redirectTo: "/login" })}
-          title="Sign out"
-          aria-label="Sign out"
-          className="rounded-md p-1.5 text-ink-faint transition-colors hover:bg-surface-2 hover:text-ink"
-        >
-          <LogOut size={15} />
-        </button>
-      </div>
+    <div className="border-t border-line px-5 py-3">
+      <p className="text-[11px] leading-relaxed text-ink-faint">
+        Open hub — no sign-in. Anyone with this URL can read and edit everything.
+      </p>
     </div>
   );
 

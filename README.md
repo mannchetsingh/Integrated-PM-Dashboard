@@ -5,8 +5,12 @@ LLM assistant wired into all of it. Ask it for a status, hand it rough pointers 
 get finished minutes back, or have it draft a document using what it knows about the
 project.
 
-Built on Next.js 16 (App Router) + MongoDB Atlas + NextAuth, designed to deploy to
-Vercel as-is.
+Built on Next.js 16 (App Router) + MongoDB Atlas, designed to deploy to Vercel
+as-is.
+
+> **⚠️ No authentication.** The hub is wide open — anyone who can reach the URL
+> can read and edit everything in it. Keep it local, or put it behind your host's
+> own access control before deploying anywhere public.
 
 ---
 
@@ -71,50 +75,15 @@ npm run db:check
 Once it passes, create the indexes and (optionally) a sample project:
 
 ```bash
-npm run db:seed -- --email=you@example.com   # indexes + sample data
-npm run db:seed -- --indexes-only            # indexes only
+npm run db:seed                  # indexes + sample data
+npm run db:seed -- --indexes-only  # indexes only
 ```
-
-#### `AUTH_SECRET` — **required**
-
-Generate one:
-
-```bash
-npx auth secret
-```
-
-#### `AUTH_PASSWORD` — **required in production**
-
-Sign-in is email + password. There's no OAuth and no user table: your email is
-hashed into a stable owner id, and `AUTH_PASSWORD` is the single shared password
-that guards the door.
-
-```
-AUTH_PASSWORD="something-long-and-unguessable"
-```
-
-Leave it empty **locally** and the password field disappears — any email signs
-straight in, which is convenient on your own machine.
-
-**In production it is mandatory and fails closed:** with `NODE_ENV=production`
-and no `AUTH_PASSWORD`, every sign-in is refused and the login page says so. That
-is deliberate — a passwordless hub on a public URL would let anyone who guesses
-your email read your meeting minutes.
-
-Different emails get entirely separate hubs; they share only the password. To
-restrict which addresses may sign in at all, add `ALLOWED_EMAILS`.
 
 #### `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` — at least one
 
 Everything except the AI features works without a key; the model picker only offers
 providers that have one configured. `DEFAULT_LLM_PROVIDER` picks the default
 (`anthropic` or `openai`).
-
-#### `ALLOWED_EMAILS` — optional
-
-Comma-separated allowlist applied on top of the password. Accepts full addresses
-(`me@gmail.com`) or domains (`@company.com`). Empty means any email that knows
-the password gets in — **set it if the app is on a public URL.**
 
 ### 3. Run
 
@@ -130,7 +99,7 @@ npm run dev
 | `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:check` | Verifies `MONGODB_URI` and explains any failure |
-| `npm run db:seed -- --email=…` | Creates indexes, adds a sample project |
+| `npm run db:seed` | Creates indexes, adds a sample project |
 | `npm run db:seed -- --indexes-only` | Indexes only, no sample data |
 
 ---
@@ -146,14 +115,15 @@ npm run dev
    | Variable | Notes |
    |---|---|
    | `MONGODB_URI` | Atlas, with real credentials. The local dev database does not exist here. |
-   | `AUTH_SECRET` | `npx auth secret` |
-   | `AUTH_PASSWORD` | **Mandatory** — without it the deployment blocks all sign-in |
    | `ANTHROPIC_API_KEY` | Or `OPENAI_API_KEY`, for the AI features |
-   | `ALLOWED_EMAILS` | Recommended on a public URL |
 
 4. Deploy.
 
-`AUTH_URL` is auto-detected; only set it if sign-in redirects somewhere wrong.
+> **⚠️ There is no authentication.** Anyone who reaches the deployed URL has full
+> read and write access to every project, task, meeting and document, and can
+> spend whatever LLM credit your key is attached to. Put it behind your host's
+> access control (Vercel's Deployment Protection, an IP allowlist, a VPN) or keep
+> the URL private.
 
 The three LLM routes declare `maxDuration = 60`. That's within what Vercel allows on
 Hobby with Fluid Compute; if a long generation gets cut off, raise it (Pro) or pick a
@@ -186,12 +156,10 @@ src/
 
 ### Notes on the design
 
-- **Ownership is enforced in the query**, never from the request body — every handler
-  starts with `currentUserId()` and filters on `ownerId`.
-- **Auth is guarded in a layout, not middleware**, in `src/app/(app)/layout.tsx`.
-- **No user table.** Sign-in is email + password with JWT sessions, so an owner id is
-  just `sha256(email)` truncated. Nothing about an account needs persisting, which is
-  why there's no auth database adapter.
+- **No authentication at all.** Every request is the same user. `currentUserId()` in
+  `src/lib/api.ts` returns a constant, and records still carry that as `ownerId` so
+  the models, queries and indexes are unchanged — sign-in can be reintroduced later
+  without migrating any data.
 - **Connections are cached on `globalThis`** so warm lambdas reuse them instead of
   exhausting the Atlas pool.
 - **Adding a model** is a one-line edit to `src/lib/llm/models.ts`.

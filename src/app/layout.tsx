@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,9 +19,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-dvh bg-bg text-ink antialiased">
-        <SessionProvider>{children}</SessionProvider>
-      </body>
+      <body className="min-h-dvh bg-bg text-ink antialiased">{children}</body>
     </html>
   );
 }
